@@ -1,0 +1,124 @@
+# Template PHP Build
+
+# This template allows you to validate your PHP application.
+# The workflow allows running tests and code linting on the default branch.
+
+#### 1. Only run phpunit ##########
+# image: composer:2.0
+# pipelines:
+#   default:
+#     - step:
+#         name: Test
+#         script:
+#           - composer install
+#           -  ./vendor/bin/phpunit
+#         caches:
+#           - composer
+
+#### 2. Run phpunit and deploy into testing, staging and prodution ftp server  from one branch ##########
+# pipelines:
+#   branches:
+#     master:
+#     - step:
+#         name: Build and test
+#         image: composer:2.0
+#         script:
+#           - composer install
+#           -  ./vendor/bin/phpunit --colors=always
+#         caches:
+#           - composer
+#     - step:
+#         name: Deploy to Test
+#         deployment: test
+#         script:
+#           - apt-get update
+#           - apt-get -qq install git-ftp
+#           - git ftp init --user $FTP_USERNAME_TESTING --passwd $FTP_PASSWORD_TESTING ftp://$FTP_HOST_TESTING/public_html/pipeline_testing # Change the `git ftp init` to `git ftp push` from the second time commit
+#     - step:
+#           name: Deploy to Staging
+#           deployment: staging
+#           script:
+#           - apt-get update
+#           - apt-get -qq install git-ftp
+#           - git ftp init --user $FTP_USERNAME_STAGING --passwd $FTP_PASSWORD_STAGING ftp://$FTP_HOST_STAGING/public_html/pipeline_testing  # Change the `git ftp init` to `git ftp push` from the second time commit
+#     - step:
+#         name: Deploy to Production
+#         deployment: production
+#         # trigger: manual #  This step needs to be started on the UI. Remove this line to have it run automatically.
+#         script:
+#           - apt-get update
+#           - apt-get -qq install git-ftp
+#           - git ftp init --user $FTP_USERNAME_PRODUCTION --passwd $FTP_PASSWORD_PRODUCTION ftp://$FTP_HOST_PRODUCTION/public_html/pipeline_testing  # Change the `git ftp init` to `git ftp push` from the second time commit
+#   default:
+#     - step:
+#         name: Build and test
+#         image: composer:2.0
+#         script:
+#           - composer install
+#           -  ./vendor/bin/phpunit --colors=always
+#         caches:
+#           - composer
+
+#### 3. Run phpunit and deploy into testing, staging and production server using seperate braches(develop, staging, production) ########## 
+pipelines:
+  default:
+    - step:
+        name: Build and test
+        image: composer:2.0
+        script:
+          - composer install
+          -  ./vendor/bin/phpunit --colors=always
+        caches:
+          - composer
+  
+  branches:
+    develop: # this testing branch pipeline will deploy to the testing environment
+      - step:
+          name: Build and test
+          image: composer:2.0
+          script:
+            - composer install
+            -  ./vendor/bin/phpunit --colors=always
+          caches:
+            - composer
+      - step:
+            name: Deploy to Testing 
+            deployment: test
+            script:
+            - apt-get update
+            - apt-get -qq install git-ftp
+            - git ftp init --user $FTP_USERNAME_TESTING --passwd $FTP_PASSWORD_TESTING ftp://$FTP_HOST_TESTING/public_html/pipeline_testing  # Change the `git ftp init` to `git ftp push` from the second time commit
+
+    staging: # this staging branch pipeline will deploy to the staging environment
+      - step:
+          name: Build and test
+          image: composer:2.0
+          script:
+            - composer install
+            -  ./vendor/bin/phpunit --colors=always
+          caches:
+            - composer
+      - step:
+            name: Deploy to Staging
+            deployment: staging
+            script:
+            - apt-get update
+            - apt-get -qq install git-ftp
+            - git ftp init --user $FTP_USERNAME_STAGING --passwd $FTP_PASSWORD_STAGING ftp://$FTP_HOST_STAGING/public_html/pipeline_testing  # Change the `git ftp init` to `git ftp push` from the second time commit
+
+    master: # this master branch pipeline will deploy to the production environment
+      - step:
+          name: Build and test
+          image: composer:2.0
+          script:
+            - composer install
+            -  ./vendor/bin/phpunit --colors=always
+          caches:
+            - composer
+      - step:
+          name: Deploy to Production
+          deployment: production
+          script:
+            - apt-get update
+            - apt-get -qq install git-ftp
+            - git ftp init --user $FTP_USERNAME_PRODUCTION --passwd $FTP_PASSWORD_PRODUCTION ftp://$FTP_HOST_PRODUCTION/public_html/pipeline_testing  # Change the `git ftp init` to `git ftp push` from the second time commit
